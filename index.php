@@ -16,8 +16,8 @@ session_start();
     <nav class="menu">
         <a href="index.php">Inicio</a>
         <a href="ejecicios\acronimo\acronimo.php">Acrónimos</a>
-        <a href="ejercicios/fibofact">Fibonacci/Factorial</a>
-        <a href="ejercicios/estadisticas">Estadísticas</a>
+        <a href="ejecicios\fibofact\fibofact.php">Fibonacci/Factorial</a>
+        <a href="ejecicios\estadisticas\estadisticas.php">Estadísticas</a>
     </nav>
 </body>
 </html>
