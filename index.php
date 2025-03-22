@@ -18,6 +18,7 @@ session_start();
         <a href="ejecicios\acronimo\acronimo.php">Acrónimos</a>
         <a href="ejecicios\fibofact\fibofact.php">Fibonacci/Factorial</a>
         <a href="ejecicios\estadisticas\estadisticas.php">Estadísticas</a>
+        <a href="ejecicios/binario/binario.php">Binario</a>
     </nav>
 </body>
 </html>
