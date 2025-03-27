@@ -1,98 +1,167 @@
 <?php
 session_start();
 
-function calcularFibonacci($n) {
-    $fib = [0, 1];
-    for ($i = 2; $i < $n; $i++) {
-        $fib[$i] = $fib[$i - 1] + $fib[$i - 2];
+class CalculadoraFibonacci {
+    public function calcular($n) {
+        $fib = [0, 1];
+        for ($i = 2; $i < $n; $i++) {
+            $fib[$i] = $fib[$i - 1] + $fib[$i - 2];
+        }
+        return array_slice($fib, 0, $n);
     }
-    return array_slice($fib, 0, $n);
 }
 
-function calcularFactorial($n) {
-    if ($n == 0) {
-        return ['valor' => 1, 'pasos' => '0! = 1'];
+class CalculadoraFactorial {
+    public function calcular($n) {
+        if ($n == 0) {
+            return ['valor' => 1, 'pasos' => '0! = 1'];
+        }
+        
+        $fact = 1;
+        $pasos = [];
+        for ($i = 1; $i <= $n; $i++) {
+            $fact *= $i;
+            $pasos[] = $i;
+        }
+        
+        $expresion = implode('×', $pasos);
+        return [
+            'valor' => $fact,
+            'pasos' => "$expresion = $fact"
+        ];
     }
-    
-    $fact = 1;
-    $pasos = [];
-    for ($i = 1; $i <= $n; $i++) {
-        $fact *= $i;
-        $pasos[] = $i;
-    }
-    
-    $expresion = implode('×', $pasos);
-    return [
-        'valor' => $fact,
-        'pasos' => "$expresion = $fact"
-    ];
 }
 
-$resultado = '';
-$error = '';
-$numero = '';
-$operacion = 'fibonacci';
-
-if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-    $numero = $_POST['numero'] ?? '';
-    $operacion = $_POST['operacion'] ?? 'fibonacci';
+class CalculadoraMatematica {
+    private $fibonacci;
+    private $factorial;
     
-    if (!is_numeric($numero) || $numero < 0 || $numero != floor($numero)) {
-        $error = "Por favor ingrese un número entero positivo válido";
-    } else {
-        $numero = (int)$numero;
-        if ($operacion === 'fibonacci') {
-            $serie = calcularFibonacci($numero);
-            $resultado = "Serie Fibonacci: " . implode(', ', $serie);
-        } else {
-            $factData = calcularFactorial($numero);
-            $resultado = "Factorial de $numero:" . $factData['pasos'];
+    public function __construct() {
+        $this->fibonacci = new CalculadoraFibonacci();
+        $this->factorial = new CalculadoraFactorial();
+    }
+    
+    public function ejecutarOperacion($operacion, $numero) {
+        switch ($operacion) {
+            case 'fibonacci':
+                $serie = $this->fibonacci->calcular($numero);
+                return "Serie Fibonacci: " . implode(', ', $serie);
+            case 'factorial':
+                $factData = $this->factorial->calcular($numero);
+                return "Factorial de $numero: " . $factData['pasos'];
+            default:
+                throw new Exception("Operación no válida");
         }
     }
 }
-?>
 
-<!DOCTYPE html>
-<html>
-<head>
-    <title>Fibonacci y Factorial</title>
-    <link rel="stylesheet" href="../../styles.css">
-</head>
-<body>
-    <nav class="menu">
-        <a href="../../index.php">Inicio</a>
-        <a href="../../ejercicios/acronimo">Acrónimos</a>
-        <a href="../../ejercicios/fibofact">Fibonacci/Factorial</a>
-        <a href="../../ejercicios/estadisticas">Estadísticas</a>
-    </nav>
+class FormularioCalculadora {
+    private $numero;
+    private $operacion;
+    private $error;
+    private $resultado;
     
-    <div class="container">
-        <h1>Calculadora de Fibonacci y Factorial</h1>
-        
-        <form method="POST">
-            <input type="number" name="numero" placeholder="Ingrese un número" 
-                   value="<?= htmlspecialchars($numero) ?>" min="0" required>
+    public function procesar() {
+        if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+            $this->numero = $_POST['numero'] ?? '';
+            $this->operacion = $_POST['operacion'] ?? 'fibonacci';
             
-            <select name="operacion">
-                <option value="fibonacci" <?= $operacion === 'fibonacci' ? 'selected' : '' ?>>Fibonacci</option>
-                <option value="factorial" <?= $operacion === 'factorial' ? 'selected' : '' ?>>Factorial</option>
-            </select>
+            if (!$this->validarNumero()) {
+                $this->error = "Por favor ingrese un número entero positivo válido";
+            } else {
+                $this->numero = (int)$this->numero;
+                $calculadora = new CalculadoraMatematica();
+                try {
+                    $this->resultado = $calculadora->ejecutarOperacion(
+                        $this->operacion, 
+                        $this->numero
+                    );
+                } catch (Exception $e) {
+                    $this->error = $e->getMessage();
+                }
+            }
+        }
+    }
+    
+    private function validarNumero() {
+        return is_numeric($this->numero) && 
+               $this->numero >= 0 && 
+               $this->numero == floor($this->numero);
+    }
+    
+    public function getNumero() {
+        return $this->numero;
+    }
+    
+    public function getOperacion() {
+        return $this->operacion;
+    }
+    
+    public function getError() {
+        return $this->error;
+    }
+    
+    public function getResultado() {
+        return $this->resultado;
+    }
+}
+
+class VistaCalculadora {
+    public static function render(FormularioCalculadora $formulario) {
+        ?>
+        <!DOCTYPE html>
+        <html>
+        <head>
+            <title>Fibonacci y Factorial</title>
+            <link rel="stylesheet" href="../styles.css">
+        </head>
+        <body>
+            <nav class="menu">
+                <a href="index.php">Inicio</a>
+                <a href="../Taller_programacion_22_03_2025/ejecicios/acronimo/acronimo.php">Acrónimos</a>
+                <a href="../Taller_programacion_22_03_2025/ejecicios/fibofact/fibofact.php">Fibonacci/Factorial</a>
+                <a href="../Taller_programacion_22_03_2025/ejecicios/estadisticas/estadisticas.php">Estadísticas</a>
+                <a href="../Taller_programacion_22_03_2025/ejecicios/binario/binario.php">Binario</a>
+                <a href="../Taller_programacion_22_03_2025/ejecicios/conjuntos/index.php">Conjuntos</a>
+                <a href="../Taller_programacion_22_03_2025/ejecicios/Arbol Binario/Arbol.php">Arbol</a>
+            </nav>
             
-            <button type="submit">Calcular</button>
-        </form>
+            <div class="container">
+                <h1>Calculadora de Fibonacci y Factorial</h1>
+                
+                <form method="POST">
+                    <input type="number" name="numero" placeholder="Ingrese un número" 
+                           value="<?= htmlspecialchars($formulario->getNumero()) ?>" min="0" required>
+                    
+                    <select name="operacion">
+                        <option value="fibonacci" <?= $formulario->getOperacion() === 'fibonacci' ? 'selected' : '' ?>>Fibonacci</option>
+                        <option value="factorial" <?= $formulario->getOperacion() === 'factorial' ? 'selected' : '' ?>>Factorial</option>
+                    </select>
+                    
+                    <button type="submit">Calcular</button>
+                </form>
 
-        <?php if ($error): ?>
-            <div class="error">
-                <?= htmlspecialchars($error) ?>
-            </div>
-        <?php endif; ?>
+                <?php if ($formulario->getError()): ?>
+                    <div class="error">
+                        <?= htmlspecialchars($formulario->getError()) ?>
+                    </div>
+                <?php endif; ?>
 
-        <?php if ($resultado && !$error): ?>
-            <div class="resultado">
-                <h3>Resultado:</h3>
-                <p><?= str_replace('×', '×', htmlspecialchars($resultado)) ?></p>
+                <?php if ($formulario->getResultado() && !$formulario->getError()): ?>
+                    <div class="resultado">
+                        <h3>Resultado:</h3>
+                        <p><?= str_replace('×', '×', htmlspecialchars($formulario->getResultado())) ?></p>
+                    </div>
+                <?php endif; ?>
             </div>
-        <?php endif; ?>
-    </div>
-</body>
-</html>
+        </body>
+        </html>
+        <?php
+    }
+}
+
+
+$formulario = new FormularioCalculadora();
+$formulario->procesar();
+VistaCalculadora::render($formulario);
+?>

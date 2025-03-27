@@ -1,129 +1,169 @@
 <?php
 session_start();
 
-function calcularEstadisticas($numeros) {
-    $resultados = [];
-    
-    // Calcular Media
-    $resultados['media'] = array_sum($numeros) / count($numeros);
-    
-    // Calcular Mediana
-    sort($numeros);
-    $count = count($numeros);
-    $mid = floor(($count - 1) / 2);
-    
-    if ($count % 2 == 0) {
-        $resultados['mediana'] = ($numeros[$mid] + $numeros[$mid + 1]) / 2;
-    } else {
-        $resultados['mediana'] = $numeros[$mid];
+class CalculadoraEstadistica {
+    public function calcularMedia(array $numeros): float {
+        return array_sum($numeros) / count($numeros);
     }
-    
-    // Calcular Moda
-    $frecuencias = array_count_values(
-        array_map('strval', $numeros)
-    );
-    arsort($frecuencias);
-    
-    $max_frecuencia = reset($frecuencias);
-    $modas = array_keys(array_filter(
-        $frecuencias, 
-        function($v) use ($max_frecuencia) { 
-            return $v == $max_frecuencia; 
+
+    public function calcularMediana(array $numeros): float {
+        sort($numeros);
+        $count = count($numeros);
+        $mid = floor(($count - 1) / 2);
+        
+        if ($count % 2 == 0) {
+            return ($numeros[$mid] + $numeros[$mid + 1]) / 2;
         }
-    ));
-    
-    $resultados['modas'] = ($max_frecuencia > 1) 
-        ? array_map('floatval', $modas)
-        : [];
-    
-    return $resultados;
+        return $numeros[$mid];
+    }
+
+    public function calcularModas(array $numeros): array {
+        $frecuencias = array_count_values(array_map('strval', $numeros));
+        arsort($frecuencias);
+        
+        $max_frecuencia = reset($frecuencias);
+        if ($max_frecuencia <= 1) {
+            return [];
+        }
+        
+        $modas = array_keys(array_filter(
+            $frecuencias, 
+            fn($v) => $v == $max_frecuencia
+        ));
+        
+        return array_map('floatval', $modas);
+    }
+
+    public function calcularTodo(array $numeros): array {
+        return [
+            'media' => $this->calcularMedia($numeros),
+            'mediana' => $this->calcularMediana($numeros),
+            'modas' => $this->calcularModas($numeros)
+        ];
+    }
 }
 
-$input = '';
-$error = '';
-$resultados = null;
-
-if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-    $input = trim($_POST['numeros'] ?? '');
-    
-    if (!empty($input)) {
-        // Limpiar y validar números
+class ProcesadorNumeros {
+    public function validarYProcesar(string $input): array {
+        if (empty($input)) {
+            throw new InvalidArgumentException("Por favor ingrese números válidos");
+        }
+        
         $numeros = [];
         $valores = preg_split('/[\s,;]+/', $input);
         
         foreach ($valores as $valor) {
             $valor_limpio = str_replace(',', '.', $valor);
-            if (is_numeric($valor_limpio)) {
-                $numeros[] = (float)$valor_limpio;
-            } else {
-                $error = "Valor no válido: $valor";
-                break;
+            if (!is_numeric($valor_limpio)) {
+                throw new InvalidArgumentException("Valor no válido: $valor");
             }
+            $numeros[] = (float)$valor_limpio;
         }
         
         if (count($numeros) < 1) {
-            $error = "Debe ingresar al menos un número";
+            throw new InvalidArgumentException("Debe ingresar al menos un número");
         }
         
-        if (!$error) {
-            $resultados = calcularEstadisticas($numeros);
-        }
-    } else {
-        $error = "Por favor ingrese números válidos";
+        return $numeros;
     }
 }
-?>
 
-<!DOCTYPE html>
-<html>
-<head>
-    <title>Estadísticas</title>
-    <link rel="stylesheet" href="../../styles.css">
-</head>
-<body>
-    <nav class="menu">
-        <a href="../../index.php">Inicio</a>
-        <a href="../../ejercicios/acronimo">Acrónimos</a>
-        <a href="../../ejercicios/fibofact">Fibonacci/Factorial</a>
-        <a href="../../ejercicios/estadisticas">Estadísticas</a>
-    </nav>
+class FormularioEstadisticas {
+    private $input;
+    private $resultados;
+    private $error;
     
-    <div class="container">
-        <h1>Calculadora Estadística</h1>
-        
-        <form method="POST">
-            <div class="form-group">
-                <label>Ingrese números separados por comas, espacios y comas:</label>
-                <input type="text" name="numeros" 
-                       value="<?= htmlspecialchars($input) ?>"
-                       placeholder="Ej: 5, 3.2 4; 6 7.8" required>
-            </div>
-            <button type="submit">Calcular</button>
-        </form>
+    public function procesar() {
+        if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+            $this->input = trim($_POST['numeros'] ?? '');
+            
+            try {
+                $procesador = new ProcesadorNumeros();
+                $numeros = $procesador->validarYProcesar($this->input);
+                
+                $calculadora = new CalculadoraEstadistica();
+                $this->resultados = $calculadora->calcularTodo($numeros);
+            } catch (InvalidArgumentException $e) {
+                $this->error = $e->getMessage();
+            }
+        }
+    }
+    
+    public function getInput(): string {
+        return $this->input ?? '';
+    }
+    
+    public function getResultados(): ?array {
+        return $this->resultados ?? null;
+    }
+    
+    public function getError(): ?string {
+        return $this->error ?? null;
+    }
+}
 
-        <?php if ($error): ?>
-            <div class="error">
-                <?= htmlspecialchars($error) ?>
-            </div>
-        <?php endif; ?>
+class VistaEstadisticas {
+    public static function render(FormularioEstadisticas $formulario) {
+        ?>
+        <!DOCTYPE html>
+        <html>
+        <head>
+            <title>Estadísticas</title>
+            <link rel="stylesheet" href="../../styles.css">
+        </head>
+        <body>
+            <nav class="menu">
+                <a href="../../index.php">Inicio</a>
+                <a href="../../ejercicios/acronimo">Acrónimos</a>
+                <a href="../../ejercicios/fibofact">Fibonacci/Factorial</a>
+                <a href="../../ejercicios/estadisticas">Estadísticas</a>
+            </nav>
+            
+            <div class="container">
+                <h1>Calculadora Estadística</h1>
+                
+                <form method="POST">
+                    <div class="form-group">
+                        <label>Ingrese números separados por comas, espacios o comas:</label>
+                        <input type="text" name="numeros" 
+                               value="<?= htmlspecialchars($formulario->getInput()) ?>"
+                               placeholder="Ej: 5, 3.2 4; 6 7.8" required>
+                    </div>
+                    <button type="submit">Calcular</button>
+                </form>
 
-        <?php if ($resultados): ?>
-            <div class="resultado">
-                <h3>Resultados:</h3>
-                <p><strong>Media:</strong> <?= number_format($resultados['media'], 2) ?></p>
-                <p><strong>Mediana:</strong> <?= number_format($resultados['mediana'], 2) ?></p>
-                <p><strong>Moda:</strong> 
-                    <?php if (empty($resultados['modas'])): ?>
-                        No existe moda
-                    <?php else: ?>
-                        <?= implode(', ', array_map(
-                            fn($m) => number_format($m, 2), 
-                            $resultados['modas']
-                        )) ?>
-                    <?php endif; ?>
-                </p>
+                <?php if ($formulario->getError()): ?>
+                    <div class="error">
+                        <?= htmlspecialchars($formulario->getError()) ?>
+                    </div>
+                <?php endif; ?>
+
+                <?php if ($formulario->getResultados()): ?>
+                    <div class="resultado">
+                        <h3>Resultados:</h3>
+                        <p><strong>Media:</strong> <?= number_format($formulario->getResultados()['media'], 2) ?></p>
+                        <p><strong>Mediana:</strong> <?= number_format($formulario->getResultados()['mediana'], 2) ?></p>
+                        <p><strong>Moda:</strong> 
+                            <?php if (empty($formulario->getResultados()['modas'])): ?>
+                                No existe moda
+                            <?php else: ?>
+                                <?= implode(', ', array_map(
+                                    fn($m) => number_format($m, 2), 
+                                    $formulario->getResultados()['modas']
+                                )) ?>
+                            <?php endif; ?>
+                        </p>
+                    </div>
+                <?php endif; ?>
             </div>
-        <?php endif; ?>
-    </div>
-</body>
-</html>
+        </body>
+        </html>
+        <?php
+    }
+}
+
+
+$formulario = new FormularioEstadisticas();
+$formulario->procesar();
+VistaEstadisticas::render($formulario);
+?>

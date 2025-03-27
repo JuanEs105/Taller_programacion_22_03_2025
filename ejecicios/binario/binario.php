@@ -1,68 +1,122 @@
 <?php
 session_start();
 
-$numero = '';
-$binario = '';
-$error = '';
-
-if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-    $input = str_replace(',', '.', trim($_POST['numero'] ?? ''));
-    
-    if (!is_numeric($input)) {
-        $error = "Ingrese un número válido";
-    } else {
-        $numero_float = (float)$input;
-        if ($numero_float != (int)$numero_float) {
-            $error = "El número debe ser entero";
-        } else {
-            $numero = (int)$numero_float;
-            $binario = decbin($numero);
+class ConversorBinario {
+    public function convertir($input) {
+        $numero = $this->validarYConvertir($input);
+        if (!is_numeric($numero)) {
+            throw new InvalidArgumentException($numero); // $numero contiene el mensaje de error
         }
+        return [
+            'decimal' => $numero,
+            'binario' => decbin($numero)
+        ];
+    }
+
+    private function validarYConvertir($input) {
+        $inputLimpio = str_replace(',', '.', trim($input));
+        
+        if (!is_numeric($inputLimpio)) {
+            return "Ingrese un número válido";
+        }
+        
+        $numeroFloat = (float)$inputLimpio;
+        if ($numeroFloat != (int)$numeroFloat) {
+            return "El número debe ser entero";
+        }
+        
+        return (int)$numeroFloat;
     }
 }
-?>
 
-<!DOCTYPE html>
-<html>
-<head>
-    <title>Conversor a Binario</title>
-    <link rel="stylesheet" href="../../styles.css">
-</head>
-<body>
-    <nav class="menu">
-        <a href="../../index.php">Inicio</a>
-        <a href="../../ejercicios/acronimo">Acrónimos</a>
-        <a href="../../ejercicios/fibofact">Fibonacci/Factorial</a>
-        <a href="../../ejercicios/estadisticas">Estadísticas</a>
-        <a href="../../ejercicios/binario">Binario</a>
-    </nav>
+class FormularioBinario {
+    private $input;
+    private $resultado;
+    private $error;
     
-    <div class="container">
-        <h1>Conversor de Decimal a Binario</h1>
-        
-        <form method="POST">
-            <input type="text" name="numero" 
-                   placeholder="Ej: -255, 1024" 
-                   value="<?= htmlspecialchars($numero) ?>"
-                   required>
-            <button type="submit">Convertir</button>
-        </form>
+    public function procesar() {
+        if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+            $this->input = $_POST['numero'] ?? '';
+            $conversor = new ConversorBinario();
+            
+            try {
+                $this->resultado = $conversor->convertir($this->input);
+            } catch (InvalidArgumentException $e) {
+                $this->error = $e->getMessage();
+            }
+        }
+    }
+    
+    public function getInput() {
+        return $this->input;
+    }
+    
+    public function getResultado() {
+        return $this->resultado;
+    }
+    
+    public function getError() {
+        return $this->error;
+    }
+    
+    public function tieneResultado() {
+        return !empty($this->resultado);
+    }
+}
 
-        <?php if ($error): ?>
-            <div class="error">
-                <?= htmlspecialchars($error) ?>
-            </div>
-        <?php endif; ?>
+class VistaBinario {
+    public static function render(FormularioBinario $formulario) {
+        ?>
+        <!DOCTYPE html>
+        <html>
+        <head>
+            <title>Conversor a Binario</title>
+            <link rel="stylesheet" href="../../styles.css">
+        </head>
+        <body>
+            <nav class="menu">
+                <a href="../../index.php">Inicio</a>
+                <a href="../../ejercicios/acronimo">Acrónimos</a>
+                <a href="../../ejercicios/fibofact">Fibonacci/Factorial</a>
+                <a href="../../ejercicios/estadisticas">Estadísticas</a>
+                <a href="../../ejercicios/binario">Binario</a>
+            </nav>
+            
+            <div class="container">
+                <h1>Conversor de Decimal a Binario</h1>
+                
+                <form method="POST">
+                    <input type="text" name="numero" 
+                           placeholder="Ej: -255, 1024" 
+                           value="<?= htmlspecialchars($formulario->getInput()) ?>"
+                           required>
+                    <button type="submit">Convertir</button>
+                </form>
 
-        <?php if ($binario !== '' && !$error): ?>
-            <div class="resultado">
-                <h3>Resultado:</h3>
-                <p>
-                    <?= htmlspecialchars($numero) ?><sub>10</sub> = 
-                    <?= htmlspecialchars($binario) ?><sub>2</sub>
-                </p>
+                <?php if ($formulario->getError()): ?>
+                    <div class="error">
+                        <?= htmlspecialchars($formulario->getError()) ?>
+                    </div>
+                <?php endif; ?>
+
+                <?php if ($formulario->tieneResultado()): ?>
+                    <div class="resultado">
+                        <h3>Resultado:</h3>
+                        <p>
+                            <?= htmlspecialchars($formulario->getResultado()['decimal']) ?><sub>10</sub> = 
+                            <?= htmlspecialchars($formulario->getResultado()['binario']) ?><sub>2</sub>
+                        </p>
+                    </div>
+                <?php endif; ?>
             </div>
-        <?php endif; ?>
-    </div>
-</body>
-</html>
+        </body>
+        </html>
+        <?php
+    }
+}
+
+
+$formulario = new FormularioBinario();
+$formulario->procesar();
+VistaBinario::render($formulario);
+?>
