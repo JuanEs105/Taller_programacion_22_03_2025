@@ -63,10 +63,13 @@ class VistaAcronimo {
         </head>
         <body>
             <nav class="menu">
-                <a href="../index.php">Inicio</a>
-                <a href="../ejercicios/acronimo">Acrónimos</a>
-                <a href="../ejercicios/fibofact">Fibonacci/Factorial</a>
-                <a href="../ejercicios/estadisticas">Estadísticas</a>
+                <a href="../../index.php">Inicio</a>
+                <a href="../../ejecicios\acronimo\acronimo.php">Acrónimos</a>
+                <a href="../../ejecicios\fibofact\fibofact.php">Fibonacci/Factorial</a>
+                <a href="../../ejecicios\estadisticas\estadisticas.php">Estadísticas</a>
+                <a href="../../ejecicios\binario\binario.php">Binario</a>
+                <a href="../../ejecicios\conjuntos\index.php">Conjutos</a>
+                <a href="../../ejecicios\Arbol Binario\Arbol.php">Arbol</a>
             </nav>
             
             <div class="container">
