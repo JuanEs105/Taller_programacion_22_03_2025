@@ -20,6 +20,8 @@ session_start();
         <a href="ejecicios\estadisticas\estadisticas.php">Estadísticas</a>
         <a href="ejecicios/binario/binario.php">Binario</a>
         <a href="../Taller_programacion_22_03_2025/ejecicios/conjuntos/index.php">Conjuntos</a>
+        <a href="../Taller_programacion_22_03_2025/ejecicios/Arbol Binario/Arbol.php">Arbol</a>
+
     </nav>
 </body>
 </html>
