@@ -15,13 +15,12 @@ session_start();
 
     <nav class="menu">
         <a href="index.php">Inicio</a>
-        <a href="ejecicios\acronimo\acronimo.php">Acrónimos</a>
-        <a href="ejecicios\fibofact\fibofact.php">Fibonacci/Factorial</a>
-        <a href="ejecicios\estadisticas\estadisticas.php">Estadísticas</a>
-        <a href="ejecicios/binario/binario.php">Binario</a>
+        <a href="../Taller_programacion_22_03_2025/ejecicios/acronimo/acronimo.php">Acrónimos</a>
+        <a href="../Taller_programacion_22_03_2025/ejecicios/fibofact/fibofact.php">Fibonacci/Factorial</a>
+        <a href="../Taller_programacion_22_03_2025/ejecicios/estadisticas/estadisticas.php">Estadísticas</a>
+        <a href="../Taller_programacion_22_03_2025/ejecicios/binario/binario.php">Binario</a>
         <a href="../Taller_programacion_22_03_2025/ejecicios/conjuntos/index.php">Conjuntos</a>
         <a href="../Taller_programacion_22_03_2025/ejecicios/Arbol Binario/Arbol.php">Arbol</a>
-
     </nav>
 </body>
 </html>

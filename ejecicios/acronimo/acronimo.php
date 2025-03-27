@@ -23,10 +23,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 </head>
 <body>
     <nav class="menu">
-        <a href="../../index.php">Inicio</a>
-        <a href="../../ejercicios/acronimo">Acrónimos</a>
-        <a href="../../ejercicios/fibofact">Fibonacci/Factorial</a>
-        <a href="../../ejercicios/estadisticas">Estadísticas</a>
+        <a href="../index.php">Inicio</a>
+        <a href="../ejercicios/acronimo">Acrónimos</a>
+        <a href="../ejercicios/fibofact">Fibonacci/Factorial</a>
+        <a href="../ejercicios/estadisticas">Estadísticas</a>
     </nav>
     
     <div class="container">
