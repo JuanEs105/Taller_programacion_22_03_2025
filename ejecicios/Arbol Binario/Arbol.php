@@ -1,16 +1,38 @@
 <?php
 
+
 class Nodo {
-    public $valor;
-    public $izquierda;
-    public $derecha;
+    private $valor;
+    private $izquierda;
+    private $derecha;
     
     public function __construct($valor) {
         $this->valor = $valor;
         $this->izquierda = null;
         $this->derecha = null;
     }
+
+    public function getValor() {
+        return $this->valor;
+    }
+
+    public function getIzquierda() {
+        return $this->izquierda;
+    }
+
+    public function getDerecha() {
+        return $this->derecha;
+    }
+
+    public function setIzquierda($nodo) {
+        $this->izquierda = $nodo;
+    }
+
+    public function setDerecha($nodo) {
+        $this->derecha = $nodo;
+    }
 }
+
 
 class ArbolBinario {
     private $raiz;
@@ -39,27 +61,31 @@ class ArbolBinario {
         $preordenIzq = array_slice($preorden, 0, count($inordenIzq));
         $preordenDer = array_slice($preorden, count($inordenIzq));
 
-        $raiz->izquierda = $this->construir($preordenIzq, $inordenIzq);
-        $raiz->derecha = $this->construir($preordenDer, $inordenDer);
+        $raiz->setIzquierda($this->construir($preordenIzq, $inordenIzq));
+        $raiz->setDerecha($this->construir($preordenDer, $inordenDer));
 
         return $raiz;
+    }
+
+    public function getRaiz() {
+        return $this->raiz;
     }
 
     public function imprimirArbolHTML($nodo, $tipoNodo = "raiz") {
         if (!$nodo) {
             return "";
         }
-        
-        $clase = $tipoNodo === "raiz" ? "raiz" : ($nodo->izquierda || $nodo->derecha ? "rama" : "hoja");
-        
-        $html = "<li><div class='$clase'>{$nodo->valor}</div>";
-        if ($nodo->izquierda || $nodo->derecha) {
+
+        $clase = $tipoNodo === "raiz" ? "raiz" : ($nodo->getIzquierda() || $nodo->getDerecha() ? "rama" : "hoja");
+
+        $html = "<li><div class='$clase'>{$nodo->getValor()}</div>";
+        if ($nodo->getIzquierda() || $nodo->getDerecha()) {
             $html .= "<ul>";
-            if ($nodo->izquierda) {
-                $html .= $this->imprimirArbolHTML($nodo->izquierda, "rama");
+            if ($nodo->getIzquierda()) {
+                $html .= $this->imprimirArbolHTML($nodo->getIzquierda(), "rama");
             }
-            if ($nodo->derecha) {
-                $html .= $this->imprimirArbolHTML($nodo->derecha, "rama");
+            if ($nodo->getDerecha()) {
+                $html .= $this->imprimirArbolHTML($nodo->getDerecha(), "rama");
             }
             $html .= "</ul>";
         }
@@ -67,19 +93,60 @@ class ArbolBinario {
 
         return $html;
     }
+}
 
-    public function getRaiz() {
-        return $this->raiz;
+class GestorArbol {
+    private $inputPreorden;
+    private $inputInorden;
+    private $resultadoHTML;
+    private $error;
+
+    public function __construct() {
+        $this->inputPreorden = "";
+        $this->inputInorden = "";
+        $this->resultadoHTML = "";
+        $this->error = "";
+    }
+
+    public function procesarFormulario() {
+        if ($_SERVER["REQUEST_METHOD"] == "POST") {
+            $this->inputPreorden = trim($_POST['preorden']);
+            $this->inputInorden = trim($_POST['inorden']);
+
+            if (!empty($this->inputPreorden) && !empty($this->inputInorden)) {
+                $preorden = explode(",", str_replace(" ", "", $this->inputPreorden));
+                $inorden = explode(",", str_replace(" ", "", $this->inputInorden));
+
+                $arbol = new ArbolBinario();
+                $arbol->construirDesdePreInorden($preorden, $inorden);
+                $this->resultadoHTML = $arbol->imprimirArbolHTML($arbol->getRaiz());
+            } else {
+                $this->error = "Ambos recorridos son requeridos.";
+            }
+        }
+    }
+
+    public function getPreorden() {
+        return $this->inputPreorden;
+    }
+
+    public function getInorden() {
+        return $this->inputInorden;
+    }
+
+    public function getResultadoHTML() {
+        return $this->resultadoHTML;
+    }
+
+    public function getError() {
+        return $this->error;
     }
 }
 
-if ($_SERVER["REQUEST_METHOD"] == "POST") {
-    $preorden = explode(",", str_replace(" ", "", $_POST['preorden']));
-    $inorden = explode(",", str_replace(" ", "", $_POST['inorden']));
-    
-    $arbol = new ArbolBinario();
-    $arbol->construirDesdePreInorden($preorden, $inorden);
-}
+
+$gestor = new GestorArbol();
+$gestor->procesarFormulario();
+
 ?>
 
 <!DOCTYPE html>
@@ -88,111 +155,54 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Árbol Binario</title>
-    <link rel="stylesheet" href="styles.css">
-    <style>
-        .tree-container {
-            display: flex;
-            justify-content: center;
-            margin-top: 30px;
-        }
-
-        .tree {
-            text-align: center;
-            position: relative;
-        }
-
-        .tree ul {
-            padding-top: 20px;
-            position: relative;
-            display: flex;
-            justify-content: center;
-        }
-
-        .tree li {
-            list-style-type: none;
-            text-align: center;
-            position: relative;
-            padding: 20px 5px 0;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-        }
-
-        .tree li::before, .tree li::after {
-            content: "";
-            position: absolute;
-            top: 0;
-            width: 50%;
-            height: 20px;
-            border-top: 2px solid black;
-        }
-
-        .tree li::before {
-            right: 50%;
-            border-right: 2px solid black;
-            transform: rotate(-45deg);
-            transform-origin: right;
-        }
-
-        .tree li::after {
-            left: 50%;
-            border-left: 2px solid black;
-            transform: rotate(45deg);
-            transform-origin: left;
-        }
-
-        .tree li:only-child::before, .tree li:only-child::after {
-            display: none;
-        }
-
-        .tree li:first-child::before, .tree li:last-child::after {
-            border: none;
-        }
-
-        .tree li div {
-            padding: 10px 15px;
-            border-radius: 50%;
-            font-weight: bold;
-            position: relative;
-            border: 2px solid black;
-        }
-
-        .raiz { background: gold; color: black; }
-        .rama { background: lightblue; color: black; }
-        .hoja { background: lightgreen; color: black; }
-
-    </style>
+    <link rel="stylesheet" href="../../styles.css">
 </head>
 <body>
-<nav class="menu">
-                <a href="../../index.php">Inicio</a>
-                <a href="../../ejecicios\acronimo\acronimo.php">Acrónimos</a>
-                <a href="../../ejecicios\fibofact\fibofact.php">Fibonacci/Factorial</a>
-                <a href="../../ejecicios\estadisticas\estadisticas.php">Estadísticas</a>
-                <a href="../../ejecicios\binario\binario.php">Binario</a>
-                <a href="../../ejecicios\conjuntos\index.php">Conjutos</a>
-                <a href="../../ejecicios\Arbol Binario\Arbol.php">Arbol</a>
-            </nav>
+    <nav class="menu">
+        <a href="../../index.php">Inicio</a>
+        <a href="../../ejecicios/acronimo/acronimo.php">Acrónimos</a>
+        <a href="../../ejecicios/fibofact/fibofact.php">Fibonacci/Factorial</a>
+        <a href="../../ejecicios/estadisticas/estadisticas.php">Estadísticas</a>
+        <a href="../../ejecicios/binario/binario.php">Binario</a>
+        <a href="../../ejecicios/conjuntos/index.php">Conjuntos</a>
+        <a href="../../ejecicios/Arbol Binario/Arbol.php">Árbol</a>
+    </nav>
+
     <div class="container">
-        <h2>Construcción de Árbol Binario</h2>
-        <form method="post">
-            <label>Recorrido Preorden (separado por comas):</label>
-            <input type="text" name="preorden" required><br>
-            <label>Recorrido Inorden (separado por comas):</label>
-            <input type="text" name="inorden" required><br>
+        <h1>Construcción de Árbol Binario</h1>
+
+        <form method="POST">
+            <div class="form-group">
+                <label>Recorrido Preorden (separado por comas):</label>
+                <input type="text" name="preorden" 
+                       value="<?= htmlspecialchars($gestor->getPreorden()) ?>"
+                       placeholder="Ej: A,B,C,D,E,F,G" required>
+            </div>
+            <div class="form-group">
+                <label>Recorrido Inorden (separado por comas):</label>
+                <input type="text" name="inorden" 
+                       value="<?= htmlspecialchars($gestor->getInorden()) ?>"
+                       placeholder="Ej: D,B,E,A,F,C,G" required>
+            </div>
             <button type="submit">Construir Árbol</button>
         </form>
 
-        <?php if (isset($arbol)) { ?>
-            <h3>Árbol generado:</h3>
+        <?php if ($gestor->getError()): ?>
+            <div class="error">
+                <?= htmlspecialchars($gestor->getError()) ?>
+            </div>
+        <?php endif; ?>
+
+        <?php if ($gestor->getResultadoHTML()): ?>
             <div class="tree-container">
+                <h3>Árbol generado:</h3>
                 <div class="tree">
                     <ul>
-                        <?php echo $arbol->imprimirArbolHTML($arbol->getRaiz()); ?>
+                        <?= $gestor->getResultadoHTML() ?>
                     </ul>
                 </div>
             </div>
-        <?php } ?>
+        <?php endif; ?>
     </div>
 </body>
 </html>
